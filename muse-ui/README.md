@@ -1,6 +1,5 @@
 # MUSE UI/UX Design
-
-**Design contribution:** Akshara Sree  
+ 
 **Project:** MUSE Smart Wardrobe Management and Outfit Recommendation System
 
 This folder documents the user experience and visual direction for MUSE. It is a design handoff for the Flutter frontend, which lives separately in `muse-frontend`.
