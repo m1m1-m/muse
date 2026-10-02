@@ -9,5 +9,3 @@ This folder documents the user experience and visual direction for MUSE. It is a
 - `DESIGN_SYSTEM.md` — visual tokens, components, and accessibility choices.
 - `USER_FLOWS.md` — the main paths users take through MUSE.
 - `SCREEN_DESIGNS.md` — screen-by-screen goals and layout decisions.
-
-The companion Flutter UI update package is available separately. It should be copied into `muse-frontend` when the team is ready to integrate and review the design changes.
