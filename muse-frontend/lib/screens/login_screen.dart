@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 
@@ -10,51 +9,27 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-
   final AuthService authService = AuthService();
 
-  bool isRegistering = false;
   bool loading = false;
 
-  Future<void> submit() async {
+  Future<void> signIn() async {
     setState(() {
       loading = true;
     });
 
     try {
-      if (isRegistering) {
-        await authService.register(
-          emailController.text.trim(),
-          passwordController.text.trim(),
-        );
-      } else {
-        await authService.login(
-          emailController.text.trim(),
-          passwordController.text.trim(),
-        );
-      }
+      final account = await authService.signIn();
 
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isRegistering
-                ? 'Account created successfully!'
-                : 'Login successful!',
-          ),
-        ),
-      );
+      if (!mounted || account == null) return;
 
       Navigator.pushReplacementNamed(context, '/home');
-    } on FirebaseAuthException catch (e) {
+    } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.message ?? 'Authentication failed'),
+          content: Text('Sign in failed: $e'),
         ),
       );
     } finally {
@@ -64,13 +39,6 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
-  }
-
-  @override
-  void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    super.dispose();
   }
 
   @override
@@ -84,6 +52,17 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Image.asset(
+                'assets/logo.jpeg',
+                width: 160,
+                height: 160,
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
             const Text(
               'Welcome to MUSE',
               style: TextStyle(
@@ -92,56 +71,24 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
+            const SizedBox(height: 12),
+
+            const Text(
+              'Your wardrobe is stored in your own Google Drive.\n'
+              'We never see or keep your data.',
+              textAlign: TextAlign.center,
+            ),
+
             const SizedBox(height: 30),
-
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 24),
 
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: loading ? null : submit,
-                child: Text(
-                  loading
-                      ? 'Please wait...'
-                      : isRegistering
-                          ? 'Create Account'
-                          : 'Login',
+              child: ElevatedButton.icon(
+                onPressed: loading ? null : signIn,
+                icon: const Icon(Icons.login),
+                label: Text(
+                  loading ? 'Please wait...' : 'Continue with Google',
                 ),
-              ),
-            ),
-
-            TextButton(
-              onPressed: loading
-                  ? null
-                  : () {
-                      setState(() {
-                        isRegistering = !isRegistering;
-                      });
-                    },
-              child: Text(
-                isRegistering
-                    ? 'Already have an account? Login'
-                    : 'New to MUSE? Create an account',
               ),
             ),
           ],

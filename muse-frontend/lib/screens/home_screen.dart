@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'wardrobe_screen.dart';
@@ -12,7 +11,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = AuthService.currentUser;
 
     return Scaffold(
       appBar: AppBar(
@@ -39,7 +38,7 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Hello, ${user?.email ?? 'User'} 👋',
+              'Hello, ${user?.displayName ?? user?.email ?? 'User'} 👋',
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,

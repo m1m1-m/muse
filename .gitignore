@@ -1,0 +1,5 @@
+client_secret*.json
+*.jks
+key.properties
+client_*.plist
+.DS_Store

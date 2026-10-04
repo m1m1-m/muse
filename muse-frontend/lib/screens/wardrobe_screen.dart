@@ -60,6 +60,50 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     }
   }
 
+  Future<void> deleteItem(Map<String, dynamic> item) async {
+    final usedBy = await apiService.outfitsUsingItem(item['id']);
+
+    if (!mounted) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete item'),
+        content: Text(
+          'Delete "${item['name']}" and its photo?'
+          '${usedBy.isEmpty ? '' : '\n\nIt is used in: ${usedBy.join(', ')}. '
+              'It will be removed from those outfits, and outfits left empty '
+              'will be deleted.'}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await apiService.deleteWardrobeItem(item['id']);
+      await loadWardrobe();
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete item: $e'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -154,6 +198,11 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                 '${item['category'] ?? 'Unknown'}'
                 '${item['color'] != null ? ' • ${item['color']}' : ''}'
                 '${item['season'] != null ? ' • ${item['season']}' : ''}',
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: 'Delete item',
+                onPressed: () => deleteItem(item),
               ),
             ),
           );

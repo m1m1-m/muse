@@ -43,6 +43,44 @@ class _OutfitsScreenState extends State<OutfitsScreen> {
     }
   }
 
+  Future<void> deleteOutfit(Map<String, dynamic> outfit) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete outfit'),
+        content: Text(
+          'Delete "${outfit['name']}"? It will also be removed from the '
+          'planner. Your clothes are not deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await apiService.deleteOutfit(outfit['id']);
+      await loadOutfits();
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete outfit: $e'),
+        ),
+      );
+    }
+  }
+
   Future<void> openAddOutfit() async {
     final result = await Navigator.push(
       context,
@@ -155,6 +193,11 @@ class _OutfitsScreenState extends State<OutfitsScreen> {
               ),
               title: Text(name),
               subtitle: Text(occasion),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: 'Delete outfit',
+                onPressed: () => deleteOutfit(outfit),
+              ),
             ),
           );
         },

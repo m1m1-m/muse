@@ -12,6 +12,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
   final ApiService apiService = ApiService();
 
   List<dynamic> plans = [];
+  Map<String, String> outfitNames = {};
   bool loading = true;
   String? error;
 
@@ -43,10 +44,16 @@ class _PlannerScreenState extends State<PlannerScreen> {
         to: date,
       );
 
+      final outfits = await apiService.getOutfits();
+
       if (!mounted) return;
 
       setState(() {
         plans = result;
+        outfitNames = {
+          for (final outfit in outfits)
+            outfit['id'].toString(): outfit['name'].toString(),
+        };
         loading = false;
       });
     } catch (e) {
@@ -81,9 +88,77 @@ class _PlannerScreenState extends State<PlannerScreen> {
       return 'Unknown outfit';
     }
 
-    return plan['outfitName'] ??
-        plan['name'] ??
+    return outfitNames[plan['outfitId']] ??
         'Outfit ID: ${plan['outfitId'] ?? 'Unknown'}';
+  }
+
+  Future<void> planOutfit() async {
+    final outfits = await apiService.getOutfits();
+
+    if (!mounted) return;
+
+    if (outfits.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Create an outfit first.'),
+        ),
+      );
+      return;
+    }
+
+    final outfitId = await showDialog<String>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text('Plan outfit for ${formatDate(selectedDate)}'),
+        children: [
+          for (final outfit in outfits)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(
+                context,
+                outfit['id'].toString(),
+              ),
+              child: Text(outfit['name'].toString()),
+            ),
+        ],
+      ),
+    );
+
+    if (outfitId == null) return;
+
+    try {
+      await apiService.savePlanner(
+        date: formatDate(selectedDate),
+        outfitId: outfitId,
+      );
+
+      await loadPlanner();
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to plan outfit: $e'),
+        ),
+      );
+    }
+  }
+
+  Future<void> removePlan() async {
+    try {
+      await apiService.deletePlanner(
+        date: formatDate(selectedDate),
+      );
+
+      await loadPlanner();
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to remove plan: $e'),
+        ),
+      );
+    }
   }
 
   @override
@@ -91,6 +166,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Planner'),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: planOutfit,
+        icon: const Icon(Icons.event_available),
+        label: Text(plans.isEmpty ? 'Plan outfit' : 'Change outfit'),
       ),
       body: Column(
         children: [
@@ -191,7 +271,12 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 getPlanOutfitName(plan),
               ),
               subtitle: Text(
-                'Outfit ID: ${plan['outfitId'] ?? 'Unknown'}',
+                'Planned for ${formatDate(selectedDate)}',
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: 'Remove plan',
+                onPressed: removePlan,
               ),
             ),
           );

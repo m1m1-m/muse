@@ -1,11 +1,9 @@
 import 'dart:io';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/api_service.dart';
-import '../services/storage_service.dart';
 
 class AddWardrobeScreen extends StatefulWidget {
   const AddWardrobeScreen({super.key});
@@ -18,7 +16,6 @@ class AddWardrobeScreen extends StatefulWidget {
 class _AddWardrobeScreenState
     extends State<AddWardrobeScreen> {
   final ApiService apiService = ApiService();
-  final StorageService storageService = StorageService();
   final ImagePicker imagePicker = ImagePicker();
 
   final TextEditingController nameController =
@@ -92,12 +89,6 @@ class _AddWardrobeScreenState
     });
 
     try {
-      final user = FirebaseAuth.instance.currentUser;
-
-      if (user == null) {
-        throw Exception('User is not logged in');
-      }
-
       // Step 1: Create the wardrobe item.
       final createdItem =
           await apiService.addWardrobeItem(
@@ -120,21 +111,11 @@ class _AddWardrobeScreenState
         );
       }
 
-      // Step 2: Upload the image if one was selected.
+      // Step 2: Store the image in the user's Google Drive.
       if (selectedImage != null) {
-        final imagePath =
-            'users/${user.uid}/wardrobe/$itemId/image.jpg';
-
-        await storageService.uploadWardrobeImage(
-          userId: user.uid,
+        await apiService.setWardrobeImage(
           itemId: itemId,
-          imageFile: selectedImage!,
-        );
-
-        // Step 3: Save the Storage path in the wardrobe item.
-        await apiService.updateWardrobeImagePath(
-          itemId: itemId,
-          imagePath: imagePath,
+          bytes: await selectedImage!.readAsBytes(),
         );
       }
 
